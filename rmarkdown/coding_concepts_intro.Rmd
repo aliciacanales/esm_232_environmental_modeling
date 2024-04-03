@@ -192,7 +192,7 @@ Lists are used to return multiple values from functions
 ```{r}
 
 # get the function
-source("../R/compute_diversity.R")
+source("../functions/compute_diversity.R")
 
 # sampling categorical data
 # create possible values

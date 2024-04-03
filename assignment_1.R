@@ -1,12 +1,17 @@
-# a. Write a function that computes energy produced from a photovoltaic system if you know the average annual solar radiation.  You can use the following formula: 
-#   
-#   $E = A * r * H * PR$
-#     
-#     * E is energy (kWh),
-#   * A is the solar panel area (m2)
-#   * r is panel yield (0-1) (manufacture efficiency - usually around 0.2),
-#   * PR is performance ratio (0-1) (accounting for site factors that impact efficiency usually around 0.75) 
-#   * H is annual average solar radiation (kWh)
-#   
-#   
-#   b. Write your function in R; make sure that you add documentation; include default values for *r* and *PR* in the function definition; save the function in a single file to upload to Canva.
+#' Computing Energy Produced from a PV system
+#'
+#' @param A solar panel area in m2
+#' @param H annual average solar radiation in kWh
+#' @param r panel yield (0 - 1)
+#' @param PR performance ratio (0 - 1)
+#'
+#' @return energy produced by a PV system
+
+energy_produced <- function(A, H, r = 0.2, PR = 0.75){
+  
+  # calculate energy (kWh) using this equation
+  energy = A * r * H * PR
+  
+  return(energy)
+}
+
