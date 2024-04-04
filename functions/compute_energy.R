@@ -9,7 +9,7 @@
 
 energy_produced <- function(A, H, r = 0.2, PR = 0.75){
   
-  # calculate energy (kWh) using this equation
+  # calculate energy (kWh) using inputs A (area) and H (annual average solar radiation)
   energy = A * r * H * PR
   
   return(energy)
