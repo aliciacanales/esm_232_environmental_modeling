@@ -1,9 +1,9 @@
 compute_crop_yield <- function(climate_data, t, p){
-browser()
+
   t <- climate_data %>% 
     filter(month == '2') %>% 
     group_by(year) %>% 
-    summarise(temp_min = which.min(tmin_c))
+    summarise(temp_min = mean(tmin_c))
   
   p <- climate_data %>%  
     filter(month == '1') %>% 
@@ -12,6 +12,8 @@ browser()
 
   
   y = (-0.015 * t$temp_min) - (0.0046 * t$temp_min) - (0.07 * p$total_precipitation) + (0.0043 * p$total_precipitation^2) + 0.28
+  
+  yield <- data.frame(year = t$year, yield_anomaly = y)
   
   minyield = min(y)
   maxyield = max(y)
