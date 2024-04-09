@@ -1,0 +1,23 @@
+---
+title: "Assignment 2"
+author: "Alicia Canales"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, message = false, warning=FALSE, results= 'hide'}
+library(here)
+library(tidyverse)
+library(dplyr)
+```
+
+### Reading and Wrangling in Data
+```{r}
+climate_data <- read.table(here('data', 'clim.txt'), header = TRUE)
+head(climate_data)
+```
+
+```{r}
+compute_crop_yield(climate_data)
+```
+

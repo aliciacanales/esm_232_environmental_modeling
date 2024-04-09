@@ -11,18 +11,16 @@ compute_crop_yield <- function(climate_data, t, p){
     summarise(total_precipitation = sum(precip))
 
   
-  y = (-0.015 * t$temp_min) - (0.0046 * t$temp_min) - (0.07 * p$total_precipitation) + (0.0043 * p$total_precipitation^2) + 0.28
+  y = (-0.015 * t$temp_min) - (0.0046 * t$temp_min^2) - (0.07 * p$total_precipitation) + (0.0043 * p$total_precipitation^2) + 0.28
   
   yield <- data.frame(year = t$year, yield_anomaly = y)
   
-  minyield = min(y)
-  maxyield = max(y)
-  meanyield = mean(y)
+  minyield = min(yield$yield_anomaly)
+  maxyield = max(yield$yield_anomaly)
+  meanyield = mean(yield$yield_anomaly)
 
   return(list(minyield, maxyield, meanyield))
 }
-
-almond_yield <- compute_crop_yield(climate_data)
 
 ## the output =  maximum, minimum and mean yield anomoly for a input time series
 ## maximum almond yield anomaly should be approximately 1920 ton/acre
