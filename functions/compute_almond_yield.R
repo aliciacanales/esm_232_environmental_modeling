@@ -1,9 +1,9 @@
-compute_crop_yield <- function(climate_data, t, p){
+compute_crop_yield <- function(climate_data){
 
   t <- climate_data %>% 
     filter(month == '2') %>% 
     group_by(year) %>% 
-    summarise(temp_min = mean(tmin_c))
+    summarise(temp_min = min(tmin_c))
   
   p <- climate_data %>%  
     filter(month == '1') %>% 

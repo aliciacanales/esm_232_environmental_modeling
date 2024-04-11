@@ -1,0 +1,43 @@
+---
+title: "Assignment 2"
+author: "Alicia Canales and Zoe Zhou"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: 'hide'
+---
+```{r setup, echo = TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+### *Conceptual Model Diagram*
+```{r}
+# knitr::include_graphics("")
+```
+
+```{r}
+library(here)
+library(tidyverse)
+library(dplyr)
+```
+
+### *Reading and Wrangling in Data*
+```{r}
+# reading in climate data
+climate_data <- read.table(here('data', 'clim.txt'), header = TRUE)
+
+# looking at data
+head(climate_data)
+```
+
+### *Calculating almond yield anomaly*
+```{r}
+# calling in the function 'compute_crop_yield'
+source('../functions/compute_crop_yield.R')
+
+# running the function over the climate data
+# this will be the only input since we do not have the change the default coefficients 
+compute_crop_yield(climate_data)
+```
+
