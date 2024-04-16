@@ -32,13 +32,13 @@ compute_crop_yield <- function(climate_data, Tcoeff1 = -0.015, Tcoeff2 = -0.0046
   y = (Tcoeff1 * t_feb$temp_min) + (Tcoeff2 * t_feb$temp_min^2) + (Pcoeff1 * p_jan$total_precipitation) + (Pcoeff2 * p_jan$total_precipitation^2) + intercept
 
   # data frame that holds annual yield results
-  yield <- data.frame(year = t_feb$year, yield_anomaly = y)
+  yield <- data.frame(yield_anomaly = y)
 
   # finding the min, max, and mean yield anomaly using the 'yield_anomaly' column in 'yield' data frame
   minyield = min(yield$yield_anomaly)
   maxyield = max(yield$yield_anomaly)
   meanyield = mean(yield$yield_anomaly)
 
-  return(list(minyield, maxyield, meanyield))
+  return(yield)
 }
 
