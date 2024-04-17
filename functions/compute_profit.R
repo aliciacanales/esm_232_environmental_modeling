@@ -12,6 +12,9 @@ compute_profit <- function(climate_data, labor = 50, cost = 15) {
   
   profit = data.frame(year = yield$year, profit = net_yield)
   
+  if (price < 1)
+    return(NA)
+  
   return(profit)
 }
 
