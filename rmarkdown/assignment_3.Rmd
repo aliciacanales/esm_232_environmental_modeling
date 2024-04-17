@@ -12,6 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 library(tidyverse)
 library(here)
+library(patchwork)
 ```
 
 # Profit model
@@ -28,7 +29,7 @@ almond_profit <- compute_profit(climate_data)
 ## 
 cost_var <- rnorm(mean = 7, sd = 0.1, n = 20)
 
-cost_sensitivity <- map(cost, ~compute_profit(climate_data, cost = cost_var))
+cost_sensitivity <- map(cost_var, ~compute_profit(climate_data, cost = cost_var))
 head(cost_sensitivity)
 
 cost_sen <- map_df(cost_sensitivity,`[`, c('year', 'profit')) 
@@ -36,26 +37,34 @@ cost_sen <- map_df(cost_sensitivity,`[`, c('year', 'profit'))
 
 # Informal Sensitivity Model for Irrigation
 ```{r}
-irr <- rnorm(mean = 10, sd = 0.1, n = 20) 
+labor <- rnorm(mean = 10, sd = 0.1, n = 20) 
 
-irr_sensitivity <- map(irr, ~compute_profit(climate_data, irr = irr))
-head(irr_sensitivity)
+labor_sensitivity <- map(labor, ~compute_profit(climate_data, labor = labor))
+head(labor_sensitivity)
 
-irr_sen <- map_df(irr_sensitivity,`[`, c('year', 'profit')) 
+labor_sen <- map_df(labor_sensitivity,`[`, c('year', 'profit')) 
 ```
 
 # plots
 ```{r}
 ## Cost Plot
-ggplot(cost_sen, aes(year, profit, group = year)) +
+p1 <- ggplot(cost_sen, aes(year, profit, group = year)) +
   geom_boxplot(fill = 'blue') +
   labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  ggtitle('Sensitivity Analysis of Cost') +
   theme_minimal()
 
-## Irrigation Plot
-ggplot(irr_sen, aes(year, profit, group = year)) +
+
+## Labor Plot
+p2 <- ggplot(labor_sen, aes(year, profit, group = year)) +
   geom_boxplot(fill = 'orange') +
   labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  ggtitle('Sensitivity Analysis of Labor') +
   theme_minimal()
+
+p1+ p2 +
+  plot_layout(ncol = 1,
+              guides = 'collect')
 ```
 
+*Write a short paragraph (in the Rmarkdown document) to summarize you interpretation of your model results (e.g what do 'take away' from your model and sensitivity analysis) *
