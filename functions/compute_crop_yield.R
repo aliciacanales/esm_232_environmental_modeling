@@ -28,17 +28,21 @@ compute_crop_yield <- function(climate_data, Tcoeff1 = -0.015, Tcoeff2 = -0.0046
     group_by(year) %>%
     summarise(total_precipitation = sum(precip)) # finding the total precipitation in January for a given year
 
+  
   # using the almond linear regression equation to compute yield anomaly 
-  y = (Tcoeff1 * t_feb$temp_min) + (Tcoeff2 * t_feb$temp_min^2) + (Pcoeff1 * p_jan$total_precipitation) + (Pcoeff2 * p_jan$total_precipitation^2) + intercept
+  almond_yield = (Tcoeff1 * t_feb$temp_min) + (Tcoeff2 * t_feb$temp_min^2) + (Pcoeff1 * p_jan$total_precipitation) + (Pcoeff2 * p_jan$total_precipitation^2) + intercept
 
   # data frame that holds annual yield results
-  yield <- data.frame(yield_anomaly = y)
+  yield <- data.frame(year = t_feb$year, 
+                         yield_anomaly = almond_yield)
 
   # finding the min, max, and mean yield anomaly using the 'yield_anomaly' column in 'yield' data frame
-  minyield = min(yield$yield_anomaly)
-  maxyield = max(yield$yield_anomaly)
-  meanyield = mean(yield$yield_anomaly)
+  yield %>% 
+    mutate(minyield = min(yield$yield_anomaly),
+           maxyield = max(yield$yield_anomaly),
+           meanyield = mean(yield$yield_anomaly))
 
   return(yield)
 }
+
 
