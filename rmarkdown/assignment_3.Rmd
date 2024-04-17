@@ -17,32 +17,45 @@ library(here)
 # Profit model
 ```{r}
 source('../functions/compute_crop_yield.R')
+source('../functions/compute_profit.R')
 climate_data <- read.table(here('data', 'clim.txt'), header = TRUE)
 
 almond_profit <- compute_profit(climate_data)
 ```
 
-# Informal Sensitivity Model
+# Informal Sensitivity Model for Cost
 ```{r}
 ## 
-cost <- rnorm(mean = 7, sd = 0.1, n = 20)
-irr <- rnorm(mean = 3, sd = 0.1, n = 20) 
+cost_var <- rnorm(mean = 7, sd = 0.1, n = 20)
 
-cost_sensitivity <- map(cost, ~compute_profit(climate_data, cost = cost))
+cost_sensitivity <- map(cost, ~compute_profit(climate_data, cost = cost_var))
 head(cost_sensitivity)
 
 cost_sen <- map_df(cost_sensitivity,`[`, c('year', 'profit')) 
+```
 
-ggplot(cost_sen, aes(year, profit, group = year)) +
-  geom_boxplot(fill = 'blue') +
-  labs(y="Profit of Almond")
+# Informal Sensitivity Model for Irrigation
+```{r}
+irr <- rnorm(mean = 10, sd = 0.1, n = 20) 
 
+irr_sensitivity <- map(irr, ~compute_profit(climate_data, irr = irr))
+head(irr_sensitivity)
 
-irr_sensitivity <- map(cost, ~compute_profit(climate_data, irr = irr))
+irr_sen <- map_df(irr_sensitivity,`[`, c('year', 'profit')) 
 ```
 
 # plots
 ```{r}
+## Cost Plot
+ggplot(cost_sen, aes(year, profit, group = year)) +
+  geom_boxplot(fill = 'blue') +
+  labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  theme_minimal()
 
+## Irrigation Plot
+ggplot(irr_sen, aes(year, profit, group = year)) +
+  geom_boxplot(fill = 'orange') +
+  labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  theme_minimal()
 ```
 
