@@ -1,5 +1,5 @@
 ---
-title: "assignment_3"
+title: "Assignment 3"
 author: "Alicia Canales and Zoe Zhou"
 date: "`r Sys.Date()`"
 output: 
@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 library(tidyverse)
 library(here)
 library(patchwork)
+library(ggplot2)
 ```
 
 ### Profit model
@@ -20,6 +21,7 @@ library(patchwork)
 ## Sourcing compute crop yield fucntion and compute profit function
 source('../functions/compute_crop_yield.R')
 source('../functions/compute_profit.R')
+set.seed(123)
 
 ## reading in data
 climate_data <- read.table(here('data', 'clim.txt'), header = TRUE)
@@ -30,45 +32,51 @@ almond_profit <- compute_profit(climate_data)
 
 ### Informal Sensitivity Model for Cost
 ```{r}
+## sampling different parameter values for cost variable
+cost_var <- rnorm(mean = 20, sd = 10, n = 20)
 
-cost_var <- rnorm(mean = 15, sd = 0.1, n = 20)
-
+## mapping the compute profit function over the new cost variables
 cost_sensitivity <- map(cost_var, ~compute_profit(climate_data, cost = cost_var))
 head(cost_sensitivity)
 
+## extracting values into a dataframe
 cost_sen <- map_df(cost_sensitivity,`[`, c('year', 'profit')) 
 ```
 
-# Informal Sensitivity Model for Irrigation
+### Informal Sensitivity Model for Labor
 ```{r}
-labor <- rnorm(mean = 10, sd = 0.1, n = 20) 
+## sampling different parameter values for labor variable
+labor <- rnorm(mean = 50, sd = 15, n = 20)  
 
+## mapping the compute profit function over the new labor variables
 labor_sensitivity <- map(labor, ~compute_profit(climate_data, labor = labor))
 head(labor_sensitivity)
 
+## extracting values into a dataframe
 labor_sen <- map_df(labor_sensitivity,`[`, c('year', 'profit')) 
 ```
 
-# plots
+### Sensitivity Results
 ```{r}
 ## Cost Plot
-p1 <- ggplot(cost_sen, aes(year, profit, group = year)) +
+p1 <- ggplot(cost_sen, aes(x = year, y = profit, group = year)) +
   geom_boxplot(fill = 'blue') +
-  labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  labs(x = 'Year', y = 'Total Profit ($)') +
   ggtitle('Sensitivity Analysis of Cost') +
-  theme_minimal()
+  theme_minimal() 
 
 
 ## Labor Plot
 p2 <- ggplot(labor_sen, aes(year, profit, group = year)) +
   geom_boxplot(fill = 'orange') +
-  labs(x = 'Year', y = "Total Profit of Almond Sales ($) ") +
+  labs(x = 'Year', y = 'Total Profit ($)') +
   ggtitle('Sensitivity Analysis of Labor') +
   theme_minimal()
 
-p1+ p2 +
-  plot_layout(ncol = 1,
-              guides = 'collect')
+combined <- p1 / p2
+combined
 ```
 
-*Write a short paragraph (in the Rmarkdown document) to summarize you interpretation of your model results (e.g what do 'take away' from your model and sensitivity analysis) *
+*Interpretation of Model*
+
+This sensitivity analysis focused on the profit function, highlighting how inputs like cost and labor directly impact profitability. It identified labor cost as the main factor influencing profit fluctuations, demonstrated by boxplots showing greater variance for labor costs. In the profit function, labor and cost are multiplied to compute total costs, subtracted from income to determine net profit. Thus theoretically, changes in labor or cost should equally affect profit, given their proportional relationship in the calculation. Discrepancies between two sensitivity analyses may arise from scaling differences.

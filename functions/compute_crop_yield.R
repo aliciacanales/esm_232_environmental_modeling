@@ -36,7 +36,7 @@ compute_crop_yield <- function(climate_data, Tcoeff1 = -0.015, Tcoeff2 = -0.0046
   yield <- data.frame(year = t_feb$year, 
                          yield_anomaly = almond_yield)
 
-  # finding the min, max, and mean yield anomaly using the 'yield_anomaly' column in 'yield' data frame
+  # finding the min, max, and mean yield anomaly and adding it to 'yield' data frame
   yield %>% 
     mutate(minyield = min(yield$yield_anomaly),
            maxyield = max(yield$yield_anomaly),
