@@ -1,0 +1,51 @@
+---
+title: "catm_sensitivity"
+author: "Alicia Canales"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sensitivity)
+library(tidyverse)
+library(lhs)
+library(purrr)
+```
+
+## using lhs
+```{r}
+set.seed(1)
+
+# which parameters
+pnames = c("wind_speed", "height", "k_d", "k_0")
+
+# how many parameters
+npar =  length(pnames)
+# how many samples
+nsample = 100
+
+parm_quant = randomLHS(nsample, npar)
+colnames(parm_quant)=pnames
+# choose distributions for parameters - this would come from
+# what you know about the likely range of variation
+# then use our random samples to pick the quantiles
+
+parm = as.data.frame(matrix(nrow=nrow(parm_quant), ncol=ncol(parm_quant)))
+colnames(parm) = pnames
+```
+
+## changing the parameters
+```{r}
+pvar = 1
+
+parm[,"wind_speed"] = qnorm(parm_quant[,"wind_speed"], mean = 250, sd= 30)
+parm[,"height"] = qnorm(parm_quant[,"height"], mean = 10, sd = 2)
+
+# for uniform I'm using +- 10%
+parm[,"k_d"] = qnorm(parm_quant[,"k_d"], mean = 0.7/pvar, sd = /pvar)
+parm[,"k_0"] = qnorm(parm_quant[,"k_0"], meab = 0.1/pvar, sd = /pvar)
+
+head(parm)
+```
+
