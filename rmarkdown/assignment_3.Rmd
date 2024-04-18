@@ -15,19 +15,23 @@ library(here)
 library(patchwork)
 ```
 
-# Profit model
+### Profit model
 ```{r}
+## Sourcing compute crop yield fucntion and compute profit function
 source('../functions/compute_crop_yield.R')
 source('../functions/compute_profit.R')
+
+## reading in data
 climate_data <- read.table(here('data', 'clim.txt'), header = TRUE)
 
+## running profit model on climate data
 almond_profit <- compute_profit(climate_data)
 ```
 
-# Informal Sensitivity Model for Cost
+### Informal Sensitivity Model for Cost
 ```{r}
-## 
-cost_var <- rnorm(mean = 7, sd = 0.1, n = 20)
+
+cost_var <- rnorm(mean = 15, sd = 0.1, n = 20)
 
 cost_sensitivity <- map(cost_var, ~compute_profit(climate_data, cost = cost_var))
 head(cost_sensitivity)

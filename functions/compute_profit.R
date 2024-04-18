@@ -1,20 +1,40 @@
 #..............Profit model..........................
-
+#' @title compute profit
+#' @description
+#' Function computes profit from almond yield by calling compute_crop_yield function
+#' @author Alicia Canales and Zoe Zhou
+#' @param climate_data climate data frame daily
+#' @param cost cost of labor in dollar, default = 15
+#' @param labor number of people working for almond farm, default = 50
+#' @param price of each almond yield sampled with random uniform as input
+#' @param Tcoeff1 default=-0.015
+#' @param Tcoeff2 default=-0.0046
+#' @param Pcoeff1 default=-0.07
+#' @param Pcoeff2 default=0.0043
+#' @return data frame with estimated profit
+#'
 compute_profit <- function(climate_data, labor = 50, cost = 15) {
-  yield = compute_crop_yield(climate_data, Tcoeff1 = -0.015, Tcoeff2 = -0.0046, Pcoeff1 = -0.07, Pcoeff2 = 0.0043, intercept = 0.28)
 
-  set.seed(123)  
-  price = runif(nrow(yield), 1, 10) ## price we get for almond produced 
+  # call almond yield function within profit function
+  yield = compute_crop_yield(climate_data, Tcoeff1 = -0.015, Tcoeff2 = -0.0046, Pcoeff1 = -0.07, Pcoeff2 = 0.0043, intercept = 0.28)
   
-  income = price * yield$yield_anomaly
-  total_cost = labor * cost
-  net_yield = round(income - total_cost)
+  # general random uniform sample for price as input 
+  set.seed(123) 
+  price = runif(nrow(yield), 1, 50) ## price we get for almond produced in dollar per yield
   
-  profit = data.frame(year = yield$year, profit = net_yield)
+  income = price * yield$yield_anomaly       # income equals to price per yield  times total almond yield
+  total_cost = labor * cost                   # assume only cost is labor cost
+  net_yield = round(income - total_cost)      #profit
   
-  if (price < 1)
+  # error checking: make sure values are reasonable
+  if (min(price) < 1)
     return(NA)
   
+  # data frame that holds profit results
+  profit = data.frame(year = yield$year, profit = net_yield)
+  
   return(profit)
+
+  
 }
 
