@@ -1,0 +1,45 @@
+---
+title: "Assignment_5"
+author: "Alicia Canales & Zoe Zhou"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sensitivity)
+library(tidyverse)
+library(purrr)
+library(ggpubr)
+```
+
+### Developing a Combined Metric: Annual Summer Streamflow
+```{r}
+sager = read.table("../ESM232/Data/sager.txt", header=T)
+head(sager)
+
+
+# add date
+sager = sager %>% mutate(date = paste(day,month,year, sep="/"))
+sager$date = as.Date(sager$date,"%d/%m/%Y")
+
+# plot
+sager_clean = sager %>% pivot_longer(cols=c("model","obs"), names_to="source",
+                                  values_to="flow") # july-sept
+
+## subsetting only annual summer streamflow: june - august
+annual_summer_flow <- sager_clean %>% 
+  group_by(year, month, source) %>% 
+  filter(month %in% c(5:8)) %>% 
+  summarize(flow = sum(flow))
+
+
+## Plot of annual summer flow 
+ggplot(annual_summer_flow, aes(year, flow, col = source, linetype = source)) +
+  geom_line() +
+  labs(x = 'Year', y = 'Annual Summer Streamflow') +
+  scale_color_manual(values = c('blue', 'green4')) +
+  theme_minimal()
+
+```
+
