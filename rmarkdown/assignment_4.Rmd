@@ -1,0 +1,106 @@
+---
+title: "Assignment 4"
+author: "Alicia Canales"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: 'hide'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sensitivity)
+library(tidyverse)
+library(gridExtra)
+library(purrr)
+library(ggpubr)
+```
+### *Part 1*
+
+The results of the sensitivity analysis can contribute to the understanding of environmental problems. Because sobol looks at the variance of the parameters, the sampling of the parameters will be able to estimate the influence it has on the output of the model. For example, in the snow model paper, the results show that MFMAX has the highest sensitivity across all site locations while using the SNOW-17 model. This tells us that MFMAX (maximum felt factor) is very sensitive in the SNOW-17 model that conceptually models snow accumulation and ablation. However, using the VIC model, the parameters expa1 (accumulation period albedo decay parameter) and expa2 (thaw period albedo decay parameter) have the highest sensitivity indices across all functions. This indicates that albedo has the biggest effect on SWE and precipitation. The sensitivity analysis can tell us which parameter should be more researched in environmental decisions. The uncertainty of these parameters will contribute to how precise a model output can be. If the uncertainty of a highly sensitive parameter is high, it can be very likely that this will contribute to higher variance in the output of any model.
+
+
+### *Part 2*
+
+### Generating parameter values for the 4 parameters in the Catm funciton
+```{r}
+source("../functions/Catm.R")
+
+## number of parameters
+np=1000
+
+## generating 1 set parameter distributions
+k_o = rnorm(mean = 0.1, sd = 0.1 * 0.1, n = np)
+
+k_d = rnorm(mean = 0.7, sd = 0.7 * 0.1, n = np)
+
+v = rnorm(mean = 300, sd = 50, n = np)
+
+height = runif(min = 3.5, max = 5.5, n = np)
+
+## making dataframe with all of the distributions
+set1 <- cbind.data.frame(k_o, k_d, v, height = height)
+
+## generating another set of parameter distributions
+k_o = rnorm(mean = 0.1, sd = 0.1 * 0.1, n = np)
+
+k_d = rnorm(mean = 0.7, sd = 0.7 * 0.1, n = np)
+
+v = rnorm(mean = 300, sd = 50, n = np)
+
+height = runif(min = 3.5, max = 5.5, n = np)
+
+## making all dataframe with all of the distributions
+set2 = cbind.data.frame(k_o, k_d, v, height = height)
+
+## sampling across the two distribution sets using sobol
+sens_Catm_Sobol = sobolSalt(model = NULL, set1, set2, nboot = 100)
+```
+
+### Running model over the 4 parameter distributions set
+```{r}
+## run model for all parameter sets
+parms <- as.data.frame(sens_Catm_Sobol$X)
+colnames(parms) <- colnames(set1)
+res <- pmap_dbl(parms, Catm)
+
+sens_Catm_Sobol = sensitivity::tell(sens_Catm_Sobol, res, res.names ="ga") ## estimations of the parameters
+
+```
+
+### Sobol Indices for Main and Total Effect
+```{r}
+## main effect - parameter output variance only relationship
+row.names(sens_Catm_Sobol$S) = colnames(parms)
+sens_Catm_Sobol$S ## wind is most sensitive parameter
+
+## total effect - accounts for parameter interactions
+row.names(sens_Catm_Sobol$T) = colnames(parms)
+sens_Catm_Sobol$T ## wind most sensitive and k_0
+
+print(sens_Catm_Sobol) 
+```
+
+### Plotting
+```{r}
+## Putting all outputs into one dataframe
+both = cbind.data.frame(parms, conductance = sens_Catm_Sobol$y)
+
+## plot of overall sensitivity uncertainty
+ggplot(both, aes(x = conductance))+
+  geom_histogram() +
+  labs(x = 'Conductance (mm/s)', y = 'Count', title = 'Quantifiying Sensitivity of 4 Parameters') +
+  geom_vline(xintercept = mean(both$conductance), col="red", linewidth = 2) + ## adding a red line at mean conductance
+  theme_minimal()
+
+## response of conductance against wind in terms of 2nd total effect parameter
+ggplot(both, aes(v,conductance, col = k_o)) +
+  geom_point() +
+  scale_color_gradient(low = 'green', high = 'darkblue') +
+  labs(y="Conductance (mm/s)", x = "Wind speed (cm/s)", col = 'k_0 Parameter', title = 'Response of Conductance Against Wind in Terms of 2nd Best Parameter') +
+  theme_minimal()
+```
+
+Conductance sensitivity to windspeed is more variable as the beginning k_o parameter is greater. The output of this model varies greatly depends on the uncertainty of the k_o parameter.  Any value above or below the default 0.1 value drastically influences the amount of atmopsheric conductance that is produced as windspeed increases.The uncertainty of this parameter also allows for windspeed to have a bigger influence in the amount of conductance produced. This implies that accurate determination of k_o parameter is important for reliable output predictions from the model. 
+

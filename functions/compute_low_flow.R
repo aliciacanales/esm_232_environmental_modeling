@@ -2,30 +2,21 @@
 
 compute_lowflow <- function(m ,o, month, day, year, low_flow_months = c(6:8) ) {
   browser()
-  flow = cbind.data.frame(m,o, month, day, year)
   
-  low_flow = flow %>% 
-    group_by(year) %>% 
+  flow_data = cbind.data.frame(m,o, month, day, year) %>% 
+    group_by(year) %>%
     summarize(observed_low_flow = min(o), model_low_flow = min(m))
+ 
+  annual_min_err = mean(flow_data$model_low_flow-flow_data$observed_low_flow)
+  annual_min_cor = cor(flow_data$model_low_flow, flow_data$observed_low_flow)
   
-  low_flow$flow_per_change_o = for (i in low_flow$observed_low_flow) {
-    ((-i - i) / -i) * 100
-      }
-
-  low_flow$flow_per_change_m =
-    for (i in low_flow$model_low_flow) {
-      ((-i - i) / -i) * 100
-        }
-
-  summer_flow = low_flow %>% 
-    group_by(year, month) %>% 
-    summarize(flow_per_change_o = mean(flow_per_change_o),
-              flow_per_change_m = mean(flow_per_change_o))
+  tmp = flow %>% 
+    group_by(month, year) %>% 
+    summarize(model=sum(m), obs=sum(o))
   
-  flow = subset(summer_flow, month %in% low_flow_months)
-  
-  flow_per_change_o = summer_flow$flow_per_change_o
-  flow_per_change_m = summer_flow$flow_per_change_m
+  low = subset(tmp, month %in% c(6:8))
+  low_month_err = mean(low$model-low$obs)
+  low_month_cor=cor(low$model, low$obs)
   
   return(list(flow, flow_per_change_m, flow_per_change_o))
 }

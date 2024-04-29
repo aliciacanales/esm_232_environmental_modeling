@@ -10,11 +10,11 @@
 #'
 #' @return  Conductance (mm/s)
 
-Catm = function(v, height, zm_add=2, k_0=0.1, k_d=0.7) {
+Catm = function(v, height, zm_add=2, k_o=0.1, k_d=0.7) {
 
 
     zd = k_d*height
-    zo = k_0*height
+    zo = k_o*height
 
     zm = height+zm_add
 

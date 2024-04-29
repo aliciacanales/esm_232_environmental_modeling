@@ -13,9 +13,11 @@ library(purrr)
 library(ggpubr)
 ```
 
-### Developing a Combined Metric: Annual Summer Streamflow
+### Developing a Combined Metric: Annual Streamflow
 ```{r}
-sager = read.table("../ESM232/Data/sager.txt", header=T)
+
+## metric is high stream flow
+sager = read.table(here('data', 'sager.txt'), header = TRUE)
 head(sager)
 
 
@@ -40,6 +42,41 @@ ggplot(annual_summer_flow, aes(year, flow, col = source, linetype = source)) +
   labs(x = 'Year', y = 'Annual Summer Streamflow') +
   scale_color_manual(values = c('blue', 'green4')) +
   theme_minimal()
+
+```
+
+```{r}
+perf = compute_low_flowm(m=sager$model,o=sager$obs, month=sager$month, day=sager$day, year=sager$year, low_flow_months = c(6:8))
+
+perf = as.data.frame((perf))
+# remember you want error to be low but correlation to be high 
+# so we need to transform in some way
+
+# normalize by max error = if error is greater than this we don't care
+
+# many ideas -  maybe 50% of mean daily summer observed low flow
+tmp = sager %>% 
+  subset(month %in% c(6:8)) 
+
+errmax = mean(tmp$obs)*0.5
+
+perf = perf %>% 
+  mutate(annual_min_err_trans = max(0,(1-abs(annual_min_err/errmax) ))) ## annual min
+      
+# for monthly we can do a simpler thing to find maximum allowable errror   
+tmp = sager %>% 
+  subset(month %in% c(6:8)) %>%
+  group_by(year, month) %>% 
+  summarize(obs = sum(obs))
+
+errmax = mean(tmp$obs)*0.5
+ 
+perf = perf %>% 
+  mutate(low_month_err_trans = max(0,(1-abs(low_month_err/errmax)))) ## low months
+
+perf = perf %>% 
+  mutate(combined = (annual_min_cor + annual_min_err_trans + low_month_err_trans + low_month_cor)/4)
+perf
 
 ```
 
