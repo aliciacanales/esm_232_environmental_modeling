@@ -3,6 +3,7 @@ title: "Assignment_5"
 author: "Alicia Canales & Zoe Zhou"
 date: "`r Sys.Date()`"
 output: html_document
+code_folding: 'hide'
 ---
 
 ```{r setup, echo = TRUE, message=FALSE, warning=FALSE}
@@ -35,7 +36,7 @@ sager_clean = sager %>%
 ## subsetting only annual summer streamflow: june - august
 annual_summer_flow <- sager_clean %>% 
   group_by(year, month, source) %>% 
-  filter(month %in% c(5:8)) %>% 
+  filter(month %in% c(6:8)) %>% 
   summarize(flow = sum(flow))
 
 
@@ -55,35 +56,10 @@ ggplot(annual_summer_flow, aes(year, flow, col = source, linetype = source)) +
 source('../functions/compute_low_flow.R')
 
 ## performance using compute low flow function
-perf <- compute_lowflow(m=sager$model,o=sager$obs, month=sager$month, day=sager$day, year=sager$year, low_flow_months = c(6:8))
+perf <- compute_low_flow(m=sager$model,o=sager$obs, month=sager$month, day=sager$day, year=sager$year, low_flow_months = c(6:8))
 
 ## making performance into a data frame
 perf = as.data.frame((perf))
-
-## transforming 'summer months' using maximum error
-low_flow_months = sager %>% 
-  subset(month %in% c(6:8))
-
-## 50% of summer months observed low flow
-annual_errmax = mean(low_flow_months$obs)*0.5
- 
-perf = perf %>% 
-  mutate(annual_min_err_trans = max(0,(1-abs(annual_min_err/annual_errmax)))) 
- 
-## transforming 'annual summer months'      
-tmp = sager %>% 
-  subset(month %in% c(6:8)) %>%
-  group_by(year, month) %>% 
-  summarize(obs = sum(obs))
-
-errmax = mean(tmp$obs)*0.5
- 
-perf = perf %>% 
-  mutate(low_month_err_trans = max(0,(1-abs(low_month_err/errmax))))
-
-## Combining the 4 metrics together 
-perf = perf %>% 
-  mutate(combined = (annual_min_cor + annual_min_err_trans + low_month_err_trans + low_month_cor)/4)
 
 perf
 ```
@@ -91,7 +67,7 @@ perf
 ### Split sample calibration
 ```{r}
 ## reading in data
-source("../functions/nse.R") 
+source("../functions/compute_low_flow.R") 
 msage = read.table("../Data/sagerm.txt", header=T)
 
 ## saving the number of simulations
@@ -113,17 +89,52 @@ msage$day = sager$day
 msage = left_join(msage, sager[,c("obs","date")], by=c("date"))
 head(msage)
 
-## subsetting for the split sample
-subset_msage = subset(msage, month %in% c(6:8))
+```
 
-## running performance on all parameters
+```{r warning=FALSE, message=FALSE}
+## subsetting for the split sample
+subset_msage = subset(msage, year < 1985)
+
+## running performance on all parameter sets
 split_perf = subset_msage %>% 
-  select(-date, -month, -day, -year, -wy, -obs ) %>%
+  select(-date, -month, -day, -year, -obs ) %>%
   map_df(compute_low_flow, o = subset_msage$obs, month = subset_msage$month, day = subset_msage$day, year = subset_msage$year)
 
 ## adding names to simulations
 split_perf$sim = snames
 head(split_perf)
+summary(split_perf)
+```
+```{r}
+# select best and worst parameter sets based on the combined metric
+best = split_perf[which.max(split_perf$combined),]
+worst = split_perf[which.min(split_perf$combined),]
+
+# compare best and worst parameter set performance
+msage_pre = subset(msage, year < 1985)
+
+# plot for streamflow 
+ggplot(msage_pre, aes(date, msage_pre[, worst$sim])) + geom_line(, linetype = "dashed") +
+  geom_line(aes(date, msage_pre[, best$sim]), col = "darkgrey") +
+  geom_line(aes(date, obs), col = "brown" ) 
+
+```
+```{r}
+# compare how best parameters perform for pre and post calibration focusing on August streamflow
+# calibration period
+compare_best = msage %>% select(best$sim, worst$sim, date, obs, month, day, year)
+compare_best_pre = subset(compare_best, year < 1985)
+compare_best_my = compare_best_pre %>% select(-c(day,date)) %>% group_by(month, year) %>% 
+  summarize(across(everything(), mean))
+compare_myl = compare_best_my %>% pivot_longer(cols=!c(month,year), names_to="sim", values_to="flow")
+compare_myl %>% subset(month==8) %>% ggplot(aes(sim,flow ))+geom_boxplot()
+
+#validation period
+compare_best_post = subset(compare_best, year > 1985)
+compare_best_post_my = compare_best_post %>% select(-c(day,date)) %>% group_by(month, year) %>% 
+  summarize(across(everything(), mean))
+compare_post_myl = compare_best_post_my %>% pivot_longer(cols=!c(month,year), names_to="sim", values_to="flow")
+compare_post_myl %>% subset(month==8) %>% ggplot(aes(sim,flow ))+geom_boxplot()
 
 ```
 
