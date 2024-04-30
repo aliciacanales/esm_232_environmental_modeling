@@ -109,7 +109,7 @@ summary(split_perf)
 # select best and worst parameter sets based on the combined metric
 best = split_perf[which.max(split_perf$combined),]
 worst = split_perf[which.min(split_perf$combined),]
-
+best
 # compare best and worst parameter set performance
 msage_pre = subset(msage, year < 1985)
 
@@ -138,3 +138,6 @@ compare_post_myl %>% subset(month==8) %>% ggplot(aes(sim,flow ))+geom_boxplot()
 
 ```
 
+### Discussion 
+#### We combined 4 metrics to calculate our model's performance score: annual_min_err, annual_min_cor, low_months_err, and low_months_cor. Low months period includes June to August. The minimum error metrics are focused on the minimum values observed annually and in low-flow months, possibly reflecting the model's accuracy in predicting extreme low events or the smallest values within each year. We also given heavier weight on error and correlation in the low-flow months because we identified June, July and August to be a critical period for salmon habitat loss. 
+#### Our model performed well within the calibration period with a combined performance of 0.89 out of 1. Our best parameter set also outscores the worst parameter set in validation period. 
