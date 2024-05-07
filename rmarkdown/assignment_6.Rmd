@@ -1,0 +1,30 @@
+---
+title: "Assignment 6"
+author: "Alicia Canales & Zoe Zhou"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, echo = TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+library(tidyverse)
+library(ggplot2)
+library(deSolve)
+```
+
+### ODE Solver
+```{r}
+source('../functions/compute_forest_growth.R')
+
+forest_growth <- data.frame(years = seq(1,300,1))
+initial_c <- 10
+params <- list(k = 250, r = 0.01, g = 2)
+
+ode_results <- ode(initial_c, forest_growth$years, compute_forest_growth, params)
+
+```
+
+```{r}
+
+```
+
