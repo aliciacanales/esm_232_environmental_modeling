@@ -1,10 +1,8 @@
-compute_forest_growth <- function(time, r, c, g, K, threshold = 50){
-  
-  forest_growth <- r * c
-  
-  if (c < threshold){
-    forest_growth <- g * (1 - c/K)
-  }
-  
-   return(list(forest_growth))
+compute_forest_growth <- function(time, c, params){
+    
+  forest_growth <- params$g * (1 - c/params$k)
+    
+  forest_growth <- ifelse(c < params$threshold, params$r * c, forest_growth)
+   
+  return(list(forest_growth))
 }

@@ -16,14 +16,29 @@ library(deSolve)
 ```{r}
 source('../functions/compute_forest_growth.R')
 
-forest_growth <- data.frame(years = seq(1,300,1))
+# initial conditions over 300 years
+years <- seq(1,300,1)
+
+# initial forest size 
 initial_c <- 10
-params <- list(k = 250, r = 0.01, g = 2)
 
-ode_results <- ode(initial_c, forest_growth$years, compute_forest_growth, params)
+# initial forest parameters
+params <- list(k = 250, r = 0.01, g = 2, threshold = 50)
 
+# ode solver with initial conditions 
+ode_results <- as.data.frame(ode(initial_c, years, compute_forest_growth, params))
+
+# changing names of columns to year and carbon (forest size)
+colnames(ode_results) = c('year', 'carbon')
+
+# plot of ODE results 
+ggplot(ode_results, aes(x = year, y = carbon)) +
+  geom_point(alpha = .5, color = 'blue') +
+  labs(x = 'Year', y = 'Forest Size (Carbon)', title = 'ODE Solver Results') +
+  theme_minimal()
 ```
 
+### Sobol Global
 ```{r}
 
 ```
