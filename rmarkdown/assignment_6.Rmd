@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 library(tidyverse)
 library(ggplot2)
 library(deSolve)
+library(sensitivity)
 ```
 
 ### ODE Solver
@@ -40,6 +41,87 @@ ggplot(ode_results, aes(x = year, y = carbon)) +
 
 ### Sobol Global
 ```{r}
+# still using the same initial forest size
 
+# using two sets of parameters for sensitivity analysis
+# first set of parameters
+np=2000
+r = rnorm(mean = 0.01, sd = 0.01/10, n = np)
+g = rnorm(mean = 2, sd = 2/10, n = np)
+k = rnorm(mean = 250, sd = 250/10, n = np)
+
+X1 = cbind.data.frame(r = r, g = g, k = k)
+
+# second set of parameters
+r = rnorm(mean = 0.01, sd = 0.01/10, n = np)
+g = rnorm(mean = 2, sd = 2/10, n = np)
+k = rnorm(mean = 250, sd = 250/10, n = np)
+
+X2 = cbind.data.frame(r = r, g = g, k = k)
+
+# fixing negative values
+X1 = X1 %>% map_df(pmax, 0.0)
+X2 = X2 %>% map_df(pmax, 0.0)
+
+# sobol object
+sens_P = sobolSalt(model = NULL,X1, X2, nboot = 300)
+
+# renaming columns
+colnames(sens_P$X) = c('r','g','k')
+
+# checking the parameter sets
+head(sens_P$X)
+ 
+# putting all the parameters into a list to run it through ODE
+sobol_parms = list(r = sens_P$X[1,"r"], g = sens_P$X[1,"g"],k = sens_P$X[1,"k"], threshold = 50)
+
+# ode solver with sobol params using just the first set
+sobol_ode_result = ode(initial_c, years, compute_forest_growth, sobol_parms)
+
+# turning into data frame
+result <- as.data.frame(sobol_ode_result)
+
+# renaming column names 
+colnames(sobol_ode_result) = c('year', 'carbon')
+```
+
+### Running ODE with Sobol on all parameters using wrapper functions
+```{r}
+# computing metrics function to output the max carbon size and what year it occurs in 
+compute_forest_metrics <- function(result){
+ 
+   # max carbon size 
+  max = max(result$carbon)
+  
+   # what year the max carbon size is in
+  year = result$year[max]
+  return(list(max_carbon = max, year = year))
+}
+
+# checking to see if it runs with one parameter set
+test = compute_forest_metrics(result)
+
+# creating wrapper function that will run everything
+
+wrapper <- function(r, g, K, thres, initial_c, time, odefunction, metricfunction){
+  
+  # creating initial parameter list with carrying capacity, growth rates (r, g), and threshold
+  params <- list(k = K, r = r, g = g, threshold = thres)
+  
+  # running ode solver
+  ode_results <- ode(initial_c, years, compute_forest_growth, params)
+
+  # changing names of columns to year and carbon (forest size)
+  colnames(ode_results) = c('year', 'carbon')
+  
+  # getting the metrics 
+  metrics = compute_forest_metrics(as.data.frame(ode_results))
+  
+  return(metrics)
+}
+
+# testing on one set to make sure it runs
+wrapper(r = 0.01, g = 0.02, K = 150, thres = 50, initial_c = 3, time = seq(1, 100),
+         odefunction = compute_forest_growth, metricfunction = compute_forest_metric)
 ```
 

@@ -7,7 +7,12 @@
 #' @examples use with ode solver
 #' ode(y=1,time=c(1;100),dexppop, parms=c(0.012))
 
-dexppop = function(time, P, r) {
+dexppop = function(time, P, r, K = 75) {
+  
   dexpop = r*P
+  if (P > K){
+    dexpop = 0
+  }
+  
   return(list(dexpop))
 }

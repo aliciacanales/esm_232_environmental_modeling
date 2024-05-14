@@ -30,16 +30,22 @@ dexppop(P=20, r=0.01)
 #what is this?
 
 # notices this is the same as
-dexppop(t=100,P=20, r=0.01)
+dexppop(t=100,P=20, r=0.01) ## little r is the growth rate
 
 # lets look at this for a range of initial populations
 pops = seq(from=1, to=100)
-tmp = pops %>% map(~dexppop( time=0,r=0.01, P=.x))
+
+tmp = pops %>% 
+  map(~dexppop(time=0,r=0.01, P=.x))
+
 pchange = unlist(tmp)
 
 
 pdyn = data.frame(pops, pchange)
-ggplot(pdyn, aes(pops, pchange))+geom_point(col="green", size=1.5)
+
+ggplot(pdyn, aes(pops, pchange)) +
+  geom_point(col="green", size=1.5) +
+  theme_minimal()
 
 
 # why is this a straight line?
@@ -62,9 +68,11 @@ Two options
 
 
 ```{r explicit}
-source("../functions/exppop.R")
+source("../functions/exppop.R") ## analytical calculation of population growth
 
 # gives population after any time given an initial population
+## use dexppop on bunnies
+dexppop(P = 20, r = 0.01, K = 1000)
 
 # 20 rabbits, growth rate of 0.01 how many in 30 years
 exppop(T=30, P0=20, r=0.01, K=1000)
@@ -73,12 +81,15 @@ exppop(T=30, P0=20, r=0.01, K=1000)
 
 initialrabbits = 20
 years = seq(from=1, to=100, by=2)
-Ptime = years %>% map_dbl(~exppop( P0=initialrabbits, r=0.01, K=1000, T=.x))
+Ptime = years %>% 
+  map_dbl(~exppop( P0=initialrabbits, r=0.01, K=1000, T=.x))
 
 # keep track of what times we ran
 Ptime = data.frame(P=Ptime, years=years)
 
-ggplot(Ptime, aes(years,P))+geom_point()+labs(x="years",y="Rabbit Population")
+ggplot(Ptime, aes(years,P))+
+  geom_point()+
+  labs(x="years",y="Rabbit Population")
 
 # try generating results for maximum and minimum possible r values to compare (guess at what you think)
 
@@ -87,14 +98,23 @@ max_r = 0.1
 min_r = 0.01
 K = 1000
 
-tmp = years  %>% map_dbl(~exppop(r=max_r, P0=initialrabbits, K=K, T=.x))
+tmp = years  %>% 
+  map_dbl(~exppop(r=max_r, P0=initialrabbits, K=K, T=.x))
+
 Ptime$Pmaxr = tmp
-tmp = years %>% map_dbl(~exppop(r=min_r, P0=initialrabbits, K=K, T=.x))
+
+tmp = years %>% 
+  map_dbl(~exppop(r=min_r, P0=initialrabbits, K=K, T=.x))
+
 Ptime$Pminr = tmp
 
 head(Ptime)
-Ptimep = Ptime %>% gather(key="r",value="P",-years)
-ggplot(Ptimep, aes(years,P, col=r))+geom_point()+labs(x="years",y="Rabbit Population")
+Ptimep = Ptime %>% 
+  gather(key="r",value="P",-years)
+
+ggplot(Ptimep, aes(years,P, col=r))+
+  geom_point()+
+  labs(x="years",y="Rabbit Population")
 
 # notice how populatin becomes unstable for high growth rates! 
 
@@ -151,12 +171,17 @@ discrete_result
 
 growth_result = data.frame(time=seq(from=1,to=100))
 
-growth_result$Panalytic = growth_result$time %>% map_dbl(~exppop( P0=1,r=0.05, K=200,T=.x ))
+growth_result$Panalytic = growth_result$time %>% 
+  map_dbl(~exppop( P0=1,r=0.05, K=200,T=.x ))
 
-growth_result$Pdiscrete = growth_result$time %>% map_dbl(~discrete_logistic_pop( P0=1,r=0.05, K=200,T=.x ))
+growth_result$Pdiscrete = growth_result$time %>% 
+  map_dbl(~discrete_logistic_pop( P0=1,r=0.05, K=200,T=.x ))
 
-tmp = growth_result %>% gather(key="Ptype",value="P",-time)
-ggplot(tmp, aes(time,P, col=Ptype))+geom_point()
+tmp = growth_result %>% 
+  gather(key="Ptype",value="P",-time)
+
+ggplot(tmp, aes(time,P, col=Ptype))+
+  geom_point()
 
 # try running them for longer time periods to see what happens 
 # change the value of r, K , P0 - see how it effects the results
@@ -183,12 +208,17 @@ colnames(Ptime)=c("year","P")
 attributes(Ptime)
 
 # this also means you need to extract just the data frame for plotting
-ggplot(as.data.frame(Ptime), aes(year,P))+geom_point()+labs(y="Population", "years")
+ggplot(as.data.frame(Ptime), aes(year,P))+
+  geom_point()+
+  labs(y="Population", "years")
 
 # this also works (of course function can be by order)
 Ptime=ode(initialrabbits, years, dexppop,0.03)
 colnames(Ptime)=c("year","P")
-ggplot(as.data.frame(Ptime), aes(year,P))+geom_point()+labs(y="Population", "years")
+
+ggplot(as.data.frame(Ptime), aes(year,P))+
+  geom_point()+
+  labs(y="Population", "years")
 
 
 ```
