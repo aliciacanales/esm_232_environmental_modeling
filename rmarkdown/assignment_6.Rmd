@@ -1,8 +1,11 @@
 ---
 title: "Assignment 6"
-author: "Alicia Canales & Zoe Zhou"
+author: "Alicia Canales"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: 'hide'
 ---
 
 ```{r setup, echo = TRUE, message=FALSE, warning=FALSE}
@@ -49,15 +52,17 @@ np=2000
 r = rnorm(mean = 0.01, sd = 0.01/10, n = np)
 g = rnorm(mean = 2, sd = 2/10, n = np)
 k = rnorm(mean = 250, sd = 250/10, n = np)
+thres = rnorm(mean = 50, sd = 50/10, n = np)
 
-X1 = cbind.data.frame(r = r, g = g, k = k)
+X1 = cbind.data.frame(r = r, g = g, k = k, threshold = thres)
 
 # second set of parameters
 r = rnorm(mean = 0.01, sd = 0.01/10, n = np)
 g = rnorm(mean = 2, sd = 2/10, n = np)
 k = rnorm(mean = 250, sd = 250/10, n = np)
+thres = rnorm(mean = 50, sd = 50/10, n = np)
 
-X2 = cbind.data.frame(r = r, g = g, k = k)
+X2 = cbind.data.frame(r = r, g = g, k = k, threshold = thres)
 
 # fixing negative values
 X1 = X1 %>% map_df(pmax, 0.0)
@@ -67,13 +72,13 @@ X2 = X2 %>% map_df(pmax, 0.0)
 sens_P = sobolSalt(model = NULL,X1, X2, nboot = 300)
 
 # renaming columns
-colnames(sens_P$X) = c('r','g','k')
+colnames(sens_P$X) = c('r','g','k', 'threshold')
 
 # checking the parameter sets
 head(sens_P$X)
  
-# putting all the parameters into a list to run it through ODE
-sobol_parms = list(r = sens_P$X[1,"r"], g = sens_P$X[1,"g"],k = sens_P$X[1,"k"], threshold = 50)
+# putting all the parameters into one list to run it through ODE
+sobol_parms = list(r = sens_P$X[1,'r'], g = sens_P$X[1,'g'],k = sens_P$X[1,'k'], threshold = sens_P$X[1,'threshold'])
 
 # ode solver with sobol params using just the first set
 sobol_ode_result = ode(initial_c, years, compute_forest_growth, sobol_parms)
@@ -82,20 +87,24 @@ sobol_ode_result = ode(initial_c, years, compute_forest_growth, sobol_parms)
 result <- as.data.frame(sobol_ode_result)
 
 # renaming column names 
-colnames(sobol_ode_result) = c('year', 'carbon')
+colnames(result) = c('year', 'carbon')
 ```
 
 ### Running ODE with Sobol on all parameters using wrapper functions
 ```{r}
 # computing metrics function to output the max carbon size and what year it occurs in 
 compute_forest_metrics <- function(result){
- 
-   # max carbon size 
-  max = max(result$carbon)
+
+  # max carbon size 
+  max = result[result$carbon == max(result$carbon), ]
   
-   # what year the max carbon size is in
-  year = result$year[max]
-  return(list(max_carbon = max, year = year))
+  # what year the max carbon size is in to check that its coming from year 300 
+  year = max$year
+  
+  # the value of carbon in that year
+  forest_size = max$carbon
+  
+  return(list(max_forest_size = forest_size, year = year))
 }
 
 # checking to see if it runs with one parameter set
@@ -103,10 +112,10 @@ test = compute_forest_metrics(result)
 
 # creating wrapper function that will run everything
 
-wrapper <- function(r, g, K, thres, initial_c, time, odefunction, metricfunction){
-  
+wrapper <- function(r, g, k, threshold, initial_c, time, odefunction, metricfunction){
+
   # creating initial parameter list with carrying capacity, growth rates (r, g), and threshold
-  params <- list(k = K, r = r, g = g, threshold = thres)
+  params <- list(k = k, r = r, g = g, threshold = threshold)
   
   # running ode solver
   ode_results <- ode(initial_c, years, compute_forest_growth, params)
@@ -114,14 +123,74 @@ wrapper <- function(r, g, K, thres, initial_c, time, odefunction, metricfunction
   # changing names of columns to year and carbon (forest size)
   colnames(ode_results) = c('year', 'carbon')
   
-  # getting the metrics 
+  # getting the metrics from ode solver results
   metrics = compute_forest_metrics(as.data.frame(ode_results))
   
   return(metrics)
 }
 
 # testing on one set to make sure it runs
-wrapper(r = 0.01, g = 0.02, K = 150, thres = 50, initial_c = 3, time = seq(1, 100),
+wrapper(r = 0.01, g = 0.02, k = 150, threshold = 50, initial_c = 3, time = seq(1, 100),
          odefunction = compute_forest_growth, metricfunction = compute_forest_metric)
 ```
+
+### Running wrapper on all parameters
+```{r}
+allresults = as.data.frame(sens_P$X) %>% 
+  pmap(wrapper, initial_c = initial_c, time = years, odefunc = compute_forest_growth, metricfunction = compute_forest_metric)
+
+# extract out results from pmap into a data frame
+allres = allresults %>% 
+  map_dfr(`[`,c('max_forest_size','year'))
+```
+
+### Running Sensitivity analysis
+```{r}
+# Running sensitivity analysis on the parameters that generated the max carbon
+sens_P_max_carbon = sensitivity::tell(sens_P, allres$max_forest_size)
+
+# changing the name of the columns
+rownames(sens_P_max_carbon$S) = c('r', 'g', 'k', 'threshold')
+
+# first order sobol indices
+sens_P_max_carbon$S # 0.34807077, 0.25005313, 0.37849225, 0.07054889
+
+# total sobol indices
+rownames(sens_P_max_carbon$T) = c('r', 'g', 'k', 'threshold')
+sens_P_max_carbon$T # 0.33878815, 0.22275324,	0.37344403, 0.06253561	
+
+# combining the results and the parameters into one dataframe
+parms <- as.data.frame(sens_P_max_carbon$X)
+both <- cbind.data.frame(parms, max_carbon = sens_P_max_carbon$y)
+
+# making it tidy to make a boxplot
+tmp = both %>% 
+  pivot_longer(cols = 1:4,names_to="metric", values_to="value")
+
+# boxplot of maximum forest size
+ggplot(both, aes(y = max_carbon))+
+  geom_boxplot(color = 'green4') +
+  labs(y = 'Maximum Forest Size (C)', title = 'Forest Size') +
+  theme_minimal() +
+  guides(color = guide_legend(title = '')) +
+  theme(axis.text = element_text(size = 12),
+        legend.text = element_text(size = 11))
+
+
+## Just Extra
+# boxplot using the parameters that generated the max forest size
+ggplot(tmp, aes(x = metric, y = value, color = metric))+
+  geom_boxplot() +
+  labs(x = 'Metric', y = 'Value', title = 'Sensitivity of 4 Parameters') +
+  theme_minimal() +
+  guides(color = guide_legend(title = '')) +
+  theme(axis.text = element_text(size = 12),
+        legend.text = element_text(size = 11))
+```
+
+5. Sobol Indices
+*S: r = 0.34807077, g =  0.25005313, k = 0.37849225, threshold = 0.07054889* and 
+*T: r = 0.33878815, g = 0.22275324,	k = 0.37344403, threshold = 0.06253561*	
+
+6. The sobol indices tell us that the parameter r and k have the highest influence on the forest size since they have the highest values associated with them. This makes sense because the growth rate and the capacity of the forest will directly determine the units of carbon that can be sequestered. We see this in the first boxplot where the forest size is variable depending on the rate at which the forest is growing and the capacity it can get to. When thinking about this in regards to climate change, both of these parameters will be vulnerable to deforestation, soil quality, droughts, and flooding influencing to forests' ability to bounce back or not. In the boxplot, we see that the carrying capacity (k) producing the highest carbon value is the most variable which could mean that in 300 years the size of the forest is going to decrease. 
 

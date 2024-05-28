@@ -1,0 +1,18 @@
+---
+title: "Assignment 7"
+author: "Alicia Canales"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: 'hide'
+---
+
+```{r setup, echo = TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+library(tidyverse)
+library(ggplot2)
+library(deSolve)
+library(sensitivity)
+```
+
